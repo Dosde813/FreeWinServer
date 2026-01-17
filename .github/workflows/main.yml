@@ -1,0 +1,27 @@
+name: Windows-RDP
+on: workflow_dispatch
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Configurar RDP
+        run: |
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+          Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server\WinStations\RDP-Tcp' -Name "UserAuthentication" -Value 1
+      - name: Instalar Ngrok
+        run: |
+          Invoke-WebRequest https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-windows-amd64.zip -OutFile ngrok.zip
+          Expand-Archive ngrok.zip
+      - name: Conectar a Ngrok
+        run: .\ngrok\ngrok.exe authtoken ${{ secrets.NGROK_AUTH_TOKEN }}
+      - name: Iniciar Tunel
+        run: Start-Process .\ngrok\ngrok.exe -ArgumentList "tcp 3389"
+      - name: Mantener Encendido
+        run: |
+          $i = 0
+          while($i -lt 360){
+            Write-Output "PC Encendida... (Minuto $i)"
+            Start-Sleep -Seconds 60
+            $i++
+          }
