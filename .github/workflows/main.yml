@@ -4,21 +4,28 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: Descargar Ngrok
+      - name: Preparar Ngrok
         run: |
           Invoke-WebRequest https://bin.equinox.io/c/4VmDzA7iaHb/ngrok-stable-windows-amd64.zip -OutFile ngrok.zip
           Expand-Archive ngrok.zip
-      - name: Autenticar Ngrok
+      - name: Autenticar
         run: .\ngrok\ngrok.exe authtoken ${{ secrets.NGROK_AUTH_TOKEN }}
-      - name: Configurar Usuario
-        run: |
-          net user runneradmin P@ssw0rd! /add
-          net localgroup administrators runneradmin /add
       - name: Abrir Tunel RDP
         run: |
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name "fDenyTSConnections" -Value 0
+          Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
+          shell: powershell
           Start-Process .\ngrok\ngrok.exe -ArgumentList "tcp --region us 3389"
-      - name: Esperar Conexion
+      - name: Crear Usuario
         run: |
-          Write-Host "PC Lista! Revisa la pagina de Endpoints en Ngrok"
-          Start-Sleep -Seconds 21600
+          net user runneradmin P@ssw0rd! /add
+          net localgroup administrators runneradmin /add
+      - name: Mantener Vivo
+        run: |
+          Write-Host "PC LISTA! REVISA NGROK ENDPOINTS"
+          $i = 0
+          while($i -lt 360){
+            Write-Output "Manteniendo conexion... (Minuto $i)"
+            Start-Sleep -Seconds 60
+            $i++
+          }
